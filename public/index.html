@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>chatting-room</title>
+    <link rel="stylesheet" href="css/main.css">
+    <script src="js/jquery-3.1.0.min.js"></script>
+    <script src="socket.io/socket.io.js"></script>
+
+    <script>
+        $(function(){
+//            --------------------------------头像选择
+            $("#picbox p").on("click",function (e) {
+                e.preventDefault();
+                $(this).parent("#picbox").find(".pic").css('marginLeft', '0px');
+                $(this).parent("#picbox").find(".pic").stop().show();
+//                console.log($(this).parent("#picbox").css('height'));
+                if($(this).parent("#picbox").css('height')=='50px'){
+                    $(this).parent("#picbox").stop().animate({'height':'400px'},500);
+                    $("#picbox ul li").on("click",function() {
+                        $(this).animate({'marginLeft': '150px'}, 500);
+                        $(this).parents("#picbox").stop().animate({'height': '200px'}, 500);
+                        $(this).siblings().stop().hide();
+                    })
+                }else if($(this).parent("#picbox").css('height')=='400px'){
+                    $(this).parent("#picbox").stop().animate({'height':'50px'},500);
+                }else{
+                    $(this).parent("#picbox").css({'height':'50px'},500);
+                }
+            })
+//            ----------------------------type类型判断
+            var clientSocket=io();
+            var isLogin=false;
+            clientSocket.on("message",function (data) {
+                var type=data.type;
+                switch (type){
+                    case "100":
+                        isLogin=true;
+                        enterRoom(data);
+                        break;
+                    case "101":
+                        if(isLogin) showWelcome(data);
+//                        alert("welcome "+data.nickname);
+                        break;
+                    case "200":
+                        if(isLogin) showSelfChat(data);
+                        break;
+                    case "201":
+                        if(isLogin) showAllChat(data);
+                        break;
+                }
+            })
+
+//           ------------------------------切换聊天界面
+            $("#subBtn").on("click",function () {
+                var nickname=$.trim($("#nickname").val());
+//                console.log(nickname);
+
+                var content={
+                    type:"101",
+                    nickname:nickname
+                }
+//                发送登录信息给服务器端
+                clientSocket.send(content);
+
+//            ------------------------------------
+
+                //                验证格式
+            })
+//            ----------------------------- 发送消息
+$("#sendBtn").on("click",function () {
+
+    var messages={
+        type:"201",
+        nickname:nickname,
+        content:$("#messageInput").val()
+    }
+    $("#messageInput").val("");
+    clientSocket.send(messages);
+})
+//               .addEventListener('click', function() {
+//                var nickName = document.getElementById('nickname').value;
+//                //检查昵称输入框是否为空
+//                if (nickName.trim().length != 0) {
+//                    //不为空，则发起一个login事件并将输入的昵称发送到服务器
+//                    this.socket.emit('login', nickName);
+//                } else {
+//                    //否则输入框获得焦点
+//                    document.getElementById('nickname').focus();
+//                };
+//            }, false);
+
+//           ------------------------------构造发给服务器端的消息内容
+            function enterRoom(data){
+                $("#subBtn").parents("#login").stop().slideUp("normal",function () {
+                $(".wrapper").stop().slideDown();
+                    var entermsg="<p class='blue'>[NOTICE]You're entered the chatting room!</p><br/>"
+                    addMessage();
+                    $("#historyMsg").append(entermsg);
+                });
+            };
+            function showWelcome(data) {
+                var entermsg="<p class='blue'>[NOTICE]New user  <strong>"+data.nickname+"</strong>  entered the chatting room!</p><br/>"
+                addMessage();
+                $("#historyMsg").append(entermsg);
+            };
+            function showSelfChat(data){
+                var entermsg="<div class='me'>Me:  "+data.content+"</div><br/>";
+                addMessage();
+//                console.log(data.content);
+                $("#historyMsg").append(entermsg);
+            };
+            function showAllChat(data){
+                var entermsg="<div class='other'>"+data.nickname+":  "+data.content+"</div><br/>";
+                $("#historyMsg").append(entermsg);
+                addMessage();
+//                console.log(data.nickname);
+            };
+
+             function addMessage(){
+                // 设置内容区的滚动条到底部
+                $("#historyMsg").scrollTop($("#historyMsg").prop("scrollHeight"));
+                // 并设置焦点
+               $('#messageInput').focus();
+            };
+
+            // 回车发送聊天内容
+            $("#messageInput").on("keyup",function(e){
+                // 判断是否按下了回车键
+                if(e.keyCode == 13){
+                    $("#sendBtn").click();
+                }
+            });
+
+        })
+    </script>
+</head>
+<body>
+<div class="login" id="login">
+    <div class="loginbox">
+        <h1>Welcome to Chatting Room!</h1>
+        <div class="logintxt">
+            <form>
+                <input type="text" id="nickname" placeholder="your name">
+                <input type="radio" name="gender" value="male" style="width:30px;" checked="checked"/><i style="color: #fff;font-family: cursive">♂</i>
+                <input type="radio" name="gender" value="female" style="width:30px;"><i style="color: #fff;ont-family: cursive">♀</i>
+                </form>
+            <div class="picbox" id="picbox">
+                <p>select your head portrait!</p>
+                <ul style="float: left ;margin:10px auto;">
+                    <li class="pic"><img src="img/choice_01.jpg"> </li>
+                    <li class="pic"><img src="img/choice_02.jpg"> </li>
+                    <li class="pic"><img src="img/choice_03.jpg"> </li>
+                    <li class="pic"><img src="img/choice_04.jpg"> </li>
+                    <li class="pic"><img src="img/choice_05.jpg"> </li>
+                    <li class="pic"><img src="img/choice_06.jpg"> </li>
+                    <li class="pic"><img src="img/choice_07.jpg"> </li>
+                    <li class="pic"><img src="img/choice_08.jpg"> </li>
+                    <li class="pic"><img src="img/choice_09.jpg"> </li>
+                    <li class="pic"><img src="img/choice_10.jpg"> </li>
+                    <li class="pic"><img src="img/choice_11.jpg"> </li>
+
+                </ul>
+            </div>
+            <form>
+                <input type="button" id="subBtn" value="LET'S CHAT">
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="wrapper" style="display: none;" >
+    <div class="banner">
+        <h1>Chatting Room</h1>
+        <span id="status"></span>
+    </div>
+    <div class="list">
+        <ul>
+            <li>name1</li>
+        </ul>
+    </div>
+    <div id="historyMsg">
+    </div>
+    <div class="controls" >
+        <div class="items">
+            <input id="colorStyle" type="color" placeHolder='#000' title="font color" />
+            <input id="emoji" type="button" value="emoji" title="emoji" />
+            <label for="sendImage" class="imageLable">
+                <input type="button" value="image"  />
+                <input id="sendImage" type="file" value="image"/>
+            </label>
+            <input id="clearBtn" type="button" value="clear" title="clear screen" />
+        </div>
+        <textarea id="messageInput" placeHolder="enter to send"></textarea>
+        <input id="sendBtn" type="button" value="SEND">
+        <div id="emojiWrapper">
+        </div>
+    </div>
+</div>
+<!--<div id="loginWrapper">-->
+    <!--<p id="info">connecting to server...</p>-->
+    <!--<div id="nickWrapper">-->
+        <!--<input type="text" placeHolder="nickname" id="nicknameInput" />-->
+        <!--<input type="button" value="OK" id="loginBtn" />-->
+    <!--</div>-->
+<!--</div>-->
+<!--<script src="/socket.io/socket.io.js"></script>-->
+<!--<script src="scripts/hichat.js"></script>-->
+</body>
+</html>
